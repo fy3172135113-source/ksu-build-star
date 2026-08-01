@@ -28,6 +28,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kernel-zip
-          path: kernel/out/anykernel/*.zip
+          path: out/anykernel/*.zip
 
 
