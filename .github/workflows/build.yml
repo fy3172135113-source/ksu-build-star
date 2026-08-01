@@ -1,0 +1,37 @@
+﻿name: Build KSU kernel for star (Mi 11 Ultra)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kernel source (miui-base)
+        run: |
+          git clone --depth 1 --branch miui-base https://github.com/EndCredits/android_kernel_xiaomi_sm8350-miui.git kernel
+          cd kernel
+          echo "CONFIG_KSU=y" >> arch/arm64/configs/vendor/star_defconfig
+          wget -q https://codeload.github.com/tiann/KernelSU/tar.gz/b766b98513b5a7eb33bc1c4a76b5702bf1288f07 -O ksu.tar.gz
+          tar -xzf ksu.tar.gz
+          mkdir -p drivers/kernelsu
+          cp -r KernelSU-b766b98513b5a7eb33bc1c4a76b5702bf1288f07/kernel/. drivers/kernelsu/
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bc bison flex libssl-dev make python3 zip libncurses-dev binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu
+      - name: Setup Android clang
+        run: |
+          mkdir -p $HOME/tc && cd $HOME/tc
+          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r450784d.tar.gz -O clang.tar.gz
+          mkdir -p clang-r450784d && tar -xzf clang.tar.gz -C clang-r450784d
+          echo "$HOME/tc/clang-r450784d/bin" >> $GITHUB_PATH
+      - name: Build kernel
+        run: |
+          cd kernel
+          bash build.sh all
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-zip
+          path: kernel/out/anykernel/*.zip
