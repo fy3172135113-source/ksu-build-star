@@ -19,13 +19,7 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq bc bison flex libssl-dev make python3 zip libncurses-dev binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu
-      - name: Setup Android clang
-        run: |
-          mkdir -p $HOME/tc && cd $HOME/tc
-          wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-r450784d.tar.gz -O clang.tar.gz
-          mkdir -p clang-r450784d && tar -xzf clang.tar.gz -C clang-r450784d
-          echo "$HOME/tc/clang-r450784d/bin" >> $GITHUB_PATH
+          sudo apt-get install -y -qq bc bison flex libssl-dev make python3 zip libncurses-dev binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu clang lld llvm
       - name: Build kernel
         run: |
           cd kernel
@@ -35,4 +29,5 @@ jobs:
         with:
           name: kernel-zip
           path: kernel/out/anykernel/*.zip
+
 
