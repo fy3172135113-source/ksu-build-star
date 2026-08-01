@@ -14,7 +14,7 @@ jobs:
           echo "CONFIG_KSU=y" >> arch/arm64/configs/vendor/star_defconfig
           wget -q https://codeload.github.com/tiann/KernelSU/tar.gz/b766b98513b5a7eb33bc1c4a76b5702bf1288f07 -O ksu.tar.gz
           tar -xzf ksu.tar.gz
-          mkdir -p drivers/kernelsu
+          rm -rf drivers/kernelsu; mkdir -p drivers/kernelsu
           cp -r KernelSU-b766b98513b5a7eb33bc1c4a76b5702bf1288f07/kernel/. drivers/kernelsu/
       - name: Install toolchain
         run: |
@@ -35,3 +35,4 @@ jobs:
         with:
           name: kernel-zip
           path: kernel/out/anykernel/*.zip
+
