@@ -134,6 +134,23 @@ jobs:
           }
           ''')
               print('seccomp_cache stubbed for 5.4')
+          # pkg_observer uses 5.14+ fsnotify API: stub it out on older kernels
+          r2 = subprocess.run('grep -c handle_inode_event include/linux/fsnotify_backend.h 2>/dev/null', shell=True, capture_output=True, text=True)
+          pp = 'drivers/kernelsu/manager/pkg_observer.c'
+          if os.path.exists(pp) and r2.stdout.strip() == '0':
+              open(pp, 'w').write('''#include <linux/version.h>
+          #include "manager/throne_tracker.h"
+
+          int ksu_observer_init(void)
+          {
+              return 0;
+          }
+
+          void __exit ksu_observer_exit(void)
+          {
+          }
+          ''')
+              print('pkg_observer stubbed for 5.4')
           PYEOF
       - name: Install toolchain
         run: |
