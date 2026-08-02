@@ -1,6 +1,6 @@
-name: Build KSU kernel for star (Mi 11 Ultra)
+﻿name: Build KSU kernel for star (Mi 11 Ultra)
 
-"on":
+on:
   workflow_dispatch:
 
 jobs:
@@ -175,7 +175,7 @@ jobs:
               if changed:
                   open(al, 'w').write(src)
                   print('allowlist 5.4 compat patched')
-PYEOF
+          PYEOF
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
@@ -189,5 +189,3 @@ PYEOF
         with:
           name: kernel-zip
           path: out/anykernel/*.zip
-
-
