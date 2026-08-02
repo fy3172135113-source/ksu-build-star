@@ -175,6 +175,16 @@ jobs:
               if changed:
                   open(al, 'w').write(src)
                   print('allowlist 5.4 compat patched')
+          # app_profile.c uses seccomp.filter_count (5.7+): guard for 5.4
+          ap2 = 'drivers/kernelsu/policy/app_profile.c'
+          if os.path.exists(ap2):
+              src2 = open(ap2).read()
+              if 'filter_count' in src2 and 'KERNEL_VERSION(5, 7, 0)' not in src2:
+                  src2 = src2.replace('atomic_set(&current->seccomp.filter_count, 0);',
+                                      '#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0)\n    atomic_set(&current->seccomp.filter_count, 0);\n#endif')
+                  open(ap2, 'w').write(src2)
+                  print('app_profile 5.4 compat patched')
+
           PYEOF
       - name: Install toolchain
         run: |
