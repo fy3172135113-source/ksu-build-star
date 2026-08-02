@@ -175,6 +175,16 @@ jobs:
               if changed:
                   open(al, 'w').write(src)
                   print('allowlist 5.4 compat patched')
+          # supercall.c also uses TWA_RESUME (5.7+): define fallback
+          sc = 'drivers/kernelsu/supercall/supercall.c'
+          if os.path.exists(sc):
+              src3 = open(sc).read()
+              if 'TWA_RESUME' in src3 and '#ifndef TWA_NONE' not in src3:
+                  src3 = ('#ifndef TWA_NONE\n#define TWA_NONE 0\n#endif\n'
+                          '#ifndef TWA_RESUME\n#define TWA_RESUME TWA_NONE\n#endif\n') + src3
+                  open(sc, 'w').write(src3)
+                  print('supercall 5.4 compat patched')
+
           # app_profile.c uses seccomp.filter_count (5.7+): guard for 5.4
           ap2 = 'drivers/kernelsu/policy/app_profile.c'
           if os.path.exists(ap2):
