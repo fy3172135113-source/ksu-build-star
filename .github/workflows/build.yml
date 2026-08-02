@@ -139,6 +139,7 @@ jobs:
           pp = 'drivers/kernelsu/manager/pkg_observer.c'
           if os.path.exists(pp) and r2.stdout.strip() == '0':
               open(pp, 'w').write('''#include <linux/version.h>
+          #include <linux/init.h>
           #include "manager/throne_tracker.h"
 
           int ksu_observer_init(void)
