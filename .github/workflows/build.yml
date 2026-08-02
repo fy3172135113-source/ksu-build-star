@@ -16,6 +16,7 @@ jobs:
           tar -xzf ksu.tar.gz
           rm -rf drivers/kernelsu; mkdir -p drivers/kernelsu
           cp -r KernelSU-*/kernel/. drivers/kernelsu/
+          cp -r KernelSU-*/uapi drivers/kernelsu/
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
