@@ -18,7 +18,7 @@ jobs:
           cp -r KernelSU-*/kernel/. drivers/kernelsu/
           cp -r KernelSU-*/uapi drivers/kernelsu/
           sed -i 's|#include <linux/pgtable.h>|#include <asm/pgtable.h>|' drivers/kernelsu/feature/sucompat.c
-          # Kernel 5.4 compatibility: add fallbacks for missing nofault APIs
+          # Kernel 5.4 compatibility: add fallbacks for missing APIs
           python3 - <<'PYEOF'
           import os
           STRN = """
@@ -48,27 +48,75 @@ jobs:
           }
           #endif
           """
+          CFU = """
+          /* 5.4 compat: copy_from_user_nofault fallback */
+          #ifndef HAVE_COPY_FROM_USER_NOFAULT
+          static inline long copy_from_user_nofault(void *dst, const void __user *src, size_t size)
+          {
+              long ret;
+              if (unlikely(!access_ok(src, size)))
+                  return -EFAULT;
+              pagefault_disable();
+              ret = copy_from_user(dst, src, size);
+              pagefault_enable();
+              return ret;
+          }
+          #endif
+          """
+          CTU = """
+          /* 5.4 compat: copy_to_user_nofault fallback */
+          #ifndef HAVE_COPY_TO_USER_NOFAULT
+          static inline long copy_to_user_nofault(void __user *dst, const void *src, size_t size)
+          {
+              long ret;
+              if (unlikely(!access_ok(dst, size)))
+                  return -EFAULT;
+              pagefault_disable();
+              ret = copy_to_user(dst, src, size);
+              pagefault_enable();
+              return ret;
+          }
+          #endif
+          """
+          SEC = """
+          /* 5.4 compat: security_inode_init_security_anon fallback */
+          #ifndef HAVE_SECURITY_INODE_INIT_SECURITY_ANON
+          static inline int security_inode_init_security_anon(struct inode *inode, const struct qstr *name, const struct inode *context_inode)
+          {
+              return 0;
+          }
+          #endif
+          """
+          PATCHES = [('strncpy_from_user_nofault', 'strncpy_from_user_nofault fallback', STRN),
+                     ('copy_to_kernel_nofault', 'copy_to_kernel_nofault fallback', CPY),
+                     ('copy_from_user_nofault', 'copy_from_user_nofault fallback', CFU),
+                     ('copy_to_user_nofault', 'copy_to_user_nofault fallback', CTU),
+                     ('security_inode_init_security_anon', 'security_inode_init_security_anon fallback', SEC)]
           for root, dirs, files in os.walk('drivers/kernelsu'):
               for fn in files:
                   if not fn.endswith('.c'):
                       continue
                   fp = os.path.join(root, fn)
                   src = open(fp).read()
-                  lines = src.split('\n')
-                  last_inc = -1
-                  for idx, ln in enumerate(lines):
-                      if ln.startswith('#include'):
-                          last_inc = idx
-                  if 'strncpy_from_user_nofault' in src and 'strncpy_from_user_nofault fallback' not in src and last_inc >= 0:
-                      lines.insert(last_inc + 1, STRN)
-                      open(fp, 'w').write('\n'.join(lines))
-                      print('patched', fp, 'STRN')
-                  if 'copy_to_kernel_nofault' in src and 'copy_to_kernel_nofault fallback' not in src and last_inc >= 0:
-                      lines2 = open(fp).read().split('\n')
-                      last_inc2 = max(i2 for i2, ln2 in enumerate(lines2) if ln2.startswith('#include'))
-                      lines2.insert(last_inc2 + 1, CPY)
-                      open(fp, 'w').write('\n'.join(lines2))
-                      print('patched', fp, 'CPY')
+                  need_uaccess = any(k in src for k, _, _ in PATCHES) and '#include <linux/uaccess.h>' not in src
+                  for key, marker, code in PATCHES:
+                      if key in src and marker not in src:
+                          lines = src.split('\n')
+                          last_inc = -1
+                          for idx, ln in enumerate(lines):
+                              if ln.startswith('#include'):
+                                  last_inc = idx
+                          if last_inc < 0:
+                              continue
+                          ins = [code]
+                          if need_uaccess:
+                              ins = ['#include <linux/uaccess.h>', code]
+                              need_uaccess = False
+                          for extra in reversed(ins):
+                              lines.insert(last_inc + 1, extra)
+                          src = '\n'.join(lines)
+                          open(fp, 'w').write(src)
+                          print('patched', fp, key)
           PYEOF
       - name: Install toolchain
         run: |
