@@ -15,7 +15,7 @@ jobs:
           wget -q https://codeload.github.com/tiann/KernelSU/tar.gz/refs/tags/v3.2.5 -O ksu.tar.gz
           tar -xzf ksu.tar.gz
           rm -rf drivers/kernelsu; mkdir -p drivers/kernelsu
-          cp -r KernelSU-v3.2.5/kernel/. drivers/kernelsu/
+          cp -r KernelSU-*/kernel/. drivers/kernelsu/
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
