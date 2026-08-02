@@ -168,13 +168,14 @@ jobs:
                       lines.insert(last_inc + 1, '#include <linux/sched/task.h>')
                       src = '\n'.join(lines)
                       changed = True
-              if 'TWA_RESUME' in src and '#ifndef TWA_RESUME' not in src:
-                  src = '#ifndef TWA_RESUME\n#define TWA_RESUME TWA_NONE\n#endif\n' + src
+              if 'TWA_RESUME' in src and '#ifndef TWA_NONE' not in src:
+                  src = ('#ifndef TWA_NONE\n#define TWA_NONE 0\n#endif\n'
+                         '#ifndef TWA_RESUME\n#define TWA_RESUME TWA_NONE\n#endif\n') + src
                   changed = True
               if changed:
                   open(al, 'w').write(src)
                   print('allowlist 5.4 compat patched')
-          PYEOF
+PYEOF
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
@@ -188,3 +189,5 @@ jobs:
         with:
           name: kernel-zip
           path: out/anykernel/*.zip
+
+
