@@ -117,6 +117,23 @@ jobs:
                           src = '\n'.join(lines)
                           open(fp, 'w').write(src)
                           print('patched', fp, key)
+          # seccomp cache is 6.x-only: stub it out on older kernels
+          import subprocess
+          r = subprocess.run('grep -rl SECCOMP_ARCH_NATIVE_NR arch include 2>/dev/null', shell=True, capture_output=True, text=True)
+          sp = 'drivers/kernelsu/infra/seccomp_cache.c'
+          if os.path.exists(sp) and not r.stdout.strip():
+              open(sp, 'w').write('''#include <linux/version.h>
+          #include "infra/seccomp_cache.h"
+
+          void ksu_seccomp_clear_cache(struct seccomp_filter *filter, int nr)
+          {
+          }
+
+          void ksu_seccomp_allow_cache(struct seccomp_filter *filter, int nr)
+          {
+          }
+          ''')
+              print('seccomp_cache stubbed for 5.4')
           PYEOF
       - name: Install toolchain
         run: |
