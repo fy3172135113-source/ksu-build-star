@@ -41,6 +41,14 @@ jobs:
               s = s.replace('#define SU_PATH "/system/bin/su"', fallback + '\n#define SU_PATH "/system/bin/su"')
               open(path, 'w').write(s)
           PYEOF
+          # Kernel 5.4 lacks copy_to_kernel_nofault: add fallback in patch_memory.c
+          python3 - <<'PYEOF'
+          pm = 'drivers/kernelsu/hook/arm64/patch_memory.c'
+          s = open(pm).read()
+          if 'copy_to_kernel_nofault' in s and '5.4 compat' not in s:
+              s = s.replace('#include "klog.h" // IWYU pragma: keep', '#include "klog.h" // IWYU pragma: keep\n\n/* 5.4 compat: copy_to_kernel_nofault fallback */\n#ifndef HAVE_COPY_TO_KERNEL_NOFAULT\nstatic inline long copy_to_kernel_nofault(void *dst, const void *src, size_t size)\n{\n    return probe_kernel_write(dst, src, size);\n}\n#endif', 1)
+              open(pm, 'w').write(s)
+          PYEOF
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
