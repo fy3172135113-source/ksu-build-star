@@ -17,6 +17,7 @@ jobs:
           rm -rf drivers/kernelsu; mkdir -p drivers/kernelsu
           cp -r KernelSU-*/kernel/. drivers/kernelsu/
           cp -r KernelSU-*/uapi drivers/kernelsu/
+          sed -i 's|#include <linux/pgtable.h>|#include <asm/pgtable.h>|' drivers/kernelsu/feature/sucompat.c
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
