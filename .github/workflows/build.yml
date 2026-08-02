@@ -1,6 +1,6 @@
 name: Build KSU kernel for star (Mi 11 Ultra)
 
-on:
+"on":
   workflow_dispatch:
 
 jobs:
