@@ -18,6 +18,30 @@ jobs:
           cp -r KernelSU-*/kernel/. drivers/kernelsu/
           cp -r KernelSU-*/uapi drivers/kernelsu/
           sed -i 's|#include <linux/pgtable.h>|#include <asm/pgtable.h>|' drivers/kernelsu/feature/sucompat.c
+          # Kernel 5.4 lacks strncpy_from_user_nofault: add fallback in sucompat.c
+          python3 - <<'PYEOF'
+path = 'drivers/kernelsu/feature/sucompat.c'
+s = open(path).read()
+fallback = '''
+/* 5.4 compat: strncpy_from_user_nofault fallback */
+#ifndef HAVE_STRNCPY_FROM_USER_NOFAULT
+static long strncpy_from_user_nofault(char *dst, const void __user *unsafe_addr, long count)
+{
+    long res;
+    if (unlikely(count <= 0))
+        return 0;
+    pagefault_disable();
+    res = strncpy_from_user(dst, unsafe_addr, count);
+    pagefault_enable();
+    return res;
+}
+#endif
+'''
+if 'strncpy_from_user_nofault fallback' not in s:
+    s = s.replace('#define SU_PATH "/system/bin/su"', fallback + '
+#define SU_PATH "/system/bin/su"')
+    open(path, 'w').write(s)
+PYEOF
       - name: Install toolchain
         run: |
           sudo apt-get update -qq
