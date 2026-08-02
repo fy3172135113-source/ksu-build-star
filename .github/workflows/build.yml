@@ -1,4 +1,4 @@
-name: Build KSU kernel for star (Mi 11 Ultra)
+﻿name: Build KSU kernel for star (Mi 11 Ultra)
 
 on:
   workflow_dispatch:
@@ -152,6 +152,28 @@ jobs:
           }
           ''')
               print('pkg_observer stubbed for 5.4')
+          # allowlist.c uses TWA_RESUME (5.7+) and put_task_struct: fix for 5.4
+          al = 'drivers/kernelsu/policy/allowlist.c'
+          if os.path.exists(al):
+              src = open(al).read()
+              changed = False
+              if '#include <linux/sched/task.h>' not in src:
+                  src = src.replace('#include <linux/sched/task.h>', '')
+                  lines = src.split('\n')
+                  last_inc = -1
+                  for idx, ln in enumerate(lines):
+                      if ln.startswith('#include'):
+                          last_inc = idx
+                  if last_inc >= 0:
+                      lines.insert(last_inc + 1, '#include <linux/sched/task.h>')
+                      src = '\n'.join(lines)
+                      changed = True
+              if 'TWA_RESUME' in src and '#ifndef TWA_RESUME' not in src:
+                  src = '#ifndef TWA_RESUME\n#define TWA_RESUME TWA_NONE\n#endif\n' + src
+                  changed = True
+              if changed:
+                  open(al, 'w').write(src)
+                  print('allowlist 5.4 compat patched')
           PYEOF
       - name: Install toolchain
         run: |
