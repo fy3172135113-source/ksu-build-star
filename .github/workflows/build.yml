@@ -184,6 +184,53 @@ jobs:
                           '#ifndef TWA_RESUME\n#define TWA_RESUME TWA_NONE\n#endif\n') + src3
                   open(sc, 'w').write(src3)
                   print('supercall 5.4 compat patched')
+          # selinux rules.c + sepolicy.c use 5.10+ selinux_policy struct: stub for 5.4
+          sr = 'drivers/kernelsu/selinux/rules.c'
+          if os.path.exists(sr):
+              open(sr, 'w').write('''#include <linux/version.h>
+#include <linux/uaccess.h>
+#include <linux/types.h>
+#include "selinux.h"
+
+void apply_kernelsu_rules()
+{
+}
+
+int handle_sepolicy(void __user *user_data, u64 data_len)
+{
+    return 0;
+}
+''')
+              print('selinux rules stubbed for 5.4')
+          sp = 'drivers/kernelsu/selinux/sepolicy.c'
+          if os.path.exists(sp):
+              open(sp, 'w').write('''#include <linux/version.h>
+#include <linux/types.h>
+#include "sepolicy.h"
+
+struct selinux_policy;
+struct selinux_policy *ksu_dup_sepolicy(struct selinux_policy *old_pol) { return NULL; }
+void ksu_destroy_sepolicy(struct selinux_policy *orig) {}
+bool ksu_type(struct policydb *db, const char *name, const char *attr) { return false; }
+bool ksu_attribute(struct policydb *db, const char *name) { return false; }
+bool ksu_permissive(struct policydb *db, const char *type) { return false; }
+bool ksu_enforce(struct policydb *db, const char *type) { return false; }
+bool ksu_typeattribute(struct policydb *db, const char *type, const char *attr) { return false; }
+bool ksu_exists(struct policydb *db, const char *type) { return false; }
+bool ksu_allow(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *perm) { return false; }
+bool ksu_deny(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *perm) { return false; }
+bool ksu_auditallow(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *perm) { return false; }
+bool ksu_dontaudit(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *perm) { return false; }
+bool ksu_allowxperm(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *range) { return false; }
+bool ksu_auditallowxperm(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *range) { return false; }
+bool ksu_dontauditxperm(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *range) { return false; }
+bool ksu_type_transition(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *def, const char *obj) { return false; }
+bool ksu_type_change(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *def) { return false; }
+bool ksu_type_member(struct policydb *db, const char *src, const char *tgt, const char *cls, const char *def) { return false; }
+bool ksu_genfscon(struct policydb *db, const char *fs_name, const char *path, const char *ctx) { return false; }
+''')
+              print('selinux sepolicy stubbed for 5.4')
+
 
           # app_profile.c uses seccomp.filter_count (5.7+): guard for 5.4
           ap2 = 'drivers/kernelsu/policy/app_profile.c'
